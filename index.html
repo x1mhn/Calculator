@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mohnish Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for display */
+        .display-scroll::-webkit-scrollbar { height: 4px; }
+        .display-scroll::-webkit-scrollbar-track { background: transparent; }
+        .display-scroll::-webkit-scrollbar-thumb { background: #52525b; border-radius: 2px; }
+
+        /* Button press animation */
+        button:active { transform: scale(0.95); }
+
+        /* Prevent text selection */
+        .no-select { user-select: none; -webkit-user-select: none; }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen bg-zinc-900 p-4 no-select">
+
+    <div class="w-full max-w-xs bg-zinc-800 rounded-3xl shadow-2xl overflow-hidden border border-zinc-700">
+        <!-- Display -->
+        <div class="bg-zinc-900 p-6 text-right">
+            <div id="prev" class="text-zinc-400 text-sm h-6 font-mono tracking-wider overflow-hidden whitespace-nowrap"></div>
+            <div id="curr" class="text-white text-5xl font-light tracking-tight mt-1 overflow-x-auto whitespace-nowrap font-mono display-scroll">0</div>
+        </div>
+
+        <!-- Keypad -->
+        <div class="grid grid-cols-4 gap-px bg-zinc-700">
+            <!-- Row 1 -->
+            <button onclick="clearAll()" class="bg-zinc-600 hover:bg-zinc-500 text-red-400 text-lg font-medium py-5 transition-all duration-100">AC</button>
+            <button onclick="deleteLast()" class="bg-zinc-600 hover:bg-zinc-500 text-white text-lg font-medium py-5 transition-all duration-100">⌫</button>
+            <button onclick="appendOp('%')" class="bg-zinc-600 hover:bg-zinc-500 text-emerald-400 text-lg font-medium py-5 transition-all duration-100">%</button>
+            <button onclick="appendOp('/')" class="bg-amber-500 hover:bg-amber-400 text-white text-xl font-medium py-5 transition-all duration-100">÷</button>
+
+            <!-- Row 2 -->
+            <button onclick="appendNum('7')" class="bg-zinc-800 hover:bg-zinc-700 text-white text-2xl font-light py-5 transition-all duration-100">7</button>
+            <button onclick="appendNum('8')" class="bg-zinc-800 hover:bg-zinc-700 text-white text-2xl font-light py-5 transition-all duration-100">8</button>
+            <button onclick="appendNum('9')" class="bg-zinc-800 hover:bg-zinc-700 text-white text-2xl font-light py-5 transition-all duration-100">9</button>
+            <button onclick="appendOp('*')" class="bg-amber-500 hover:bg-amber-400 text-white text-xl font-medium py-5 transition-all duration-100">×</button>
+
+            <!-- Row 3 -->
+            <button onclick="appendNum('4')" class="bg-zinc-800 hover:bg-zinc-700 text-white text-2xl font-light py-5 transition-all duration-100">4</button>
+            <button onclick="appendNum('5')" class="bg-zinc-800 hover:bg-zinc-700 text-white text-2xl font-light py-5 transition-all duration-100">5</button>
+            <button onclick="appendNum('6')" class="bg-zinc-800 hover:bg-zinc-700 text-white text-2xl font-light py-5 transition-all duration-100">6</button>
+            <button onclick="appendOp('-')" class="bg-amber-500 hover:bg-amber-400 text-white text-xl font-medium py-5 transition-all duration-100">−</button>
+
+            <!-- Row 4 -->
+            <button onclick="appendNum('1')" class="bg-zinc-800 hover:bg-zinc-700 text-white text-2xl font-light py-5 transition-all duration-100">1</button>
+            <button onclick="appendNum('2')" class="bg-zinc-800 hover:bg-zinc-700 text-white text-2xl font-light py-5 transition-all duration-100">2</button>
+            <button onclick="appendNum('3')" class="bg-zinc-800 hover:bg-zinc-700 text-white text-2xl font-light py-5 transition-all duration-100">3</button>
+            <button onclick="appendOp('+')" class="bg-amber-500 hover:bg-amber-400 text-white text-xl font-medium py-5 transition-all duration-100">+</button>
+
+            <!-- Row 5 -->
+            <button onclick="appendNum('0')" class="bg-zinc-800 hover:bg-zinc-700 text-white text-2xl font-light py-5 transition-all duration-100 col-span-2">0</button>
+            <button onclick="appendNum('.')" class="bg-zinc-800 hover:bg-zinc-700 text-white text-2xl font-light py-5 transition-all duration-100">.</button>
+            <button onclick="calculate()" class="bg-emerald-500 hover:bg-emerald-400 text-white text-xl font-medium py-5 transition-all duration-100">=</button>
+        </div>
+    </div>
+
+    <!-- Copyright -->
+    <div class="mt-6 text-center text-zinc-500 text-xs tracking-wide">
+        <p>© Mohnish Senapati (@x1mhn)</p>
+        <div class="flex gap-4 mt-1 justify-center">
+            <a href="https://instagram.com/x1mhn" target="_blank" class="text-zinc-400 hover:text-white transition-colors">@x1mhn</a>
+            <span class="text-zinc-600">|</span>
+            <a href="https://twitter.com/x1_mhn" target="_blank" class="text-zinc-400 hover:text-white transition-colors">@x1_mhn</a>
+        </div>
+    </div>
+
+<script>
+let current = '0';
+let previous = '';
+let operation = null;
+let shouldResetScreen = false;
+
+const currDisplay = document.getElementById('curr');
+const prevDisplay = document.getElementById('prev');
+
+function updateDisplay() {
+    currDisplay.textContent = current;
+    prevDisplay.textContent = previous + (operation ? ' ' + operation : '');
+}
+
+function appendNum(num) {
+    if (shouldResetScreen) {
+        current = num === '.' ? '0.' : num;
+        shouldResetScreen = false;
+    } else {
+        if (num === '.' && current.includes('.')) return;
+        if (current === '0' && num !== '.') {
+            current = num;
+        } else {
+            current += num;
+        }
+    }
+    updateDisplay();
+}
+
+function appendOp(op) {
+    if (operation !== null && !shouldResetScreen) {
+        calculate();
+    }
+    operation = op;
+    previous = current;
+    shouldResetScreen = true;
+    updateDisplay();
+}
+
+function calculate() {
+    if (operation === null || shouldResetScreen) return;
+    let result;
+    const prev = parseFloat(previous);
+    const curr = parseFloat(current);
+
+    switch (operation) {
+        case '+': result = prev + curr; break;
+        case '-': result = prev - curr; break;
+        case '*': result = prev * curr; break;
+        case '/': result = curr === 0 ? 'Error' : prev / curr; break;
+        case '%': result = prev % curr; break;
+        default: return;
+    }
+
+    current = String(result);
+    operation = null;
+    previous = '';
+    shouldResetScreen = true;
+    updateDisplay();
+}
+
+function clearAll() {
+    current = '0';
+    previous = '';
+    operation = null;
+    shouldResetScreen = false;
+    updateDisplay();
+}
+
+function deleteLast() {
+    if (shouldResetScreen) {
+        clearAll();
+        return;
+    }
+    if (current.length === 1 || (current.length === 2 && current[0] === '-')) {
+        current = '0';
+    } else {
+        current = current.slice(0, -1);
+    }
+    updateDisplay();
+}
+
+// Keyboard support
+document.addEventListener('keydown', (e) => {
+    if (e.key >= '0' && e.key <= '9') appendNum(e.key);
+    if (e.key === '.') appendNum('.');
+    if (e.key === '+') appendOp('+');
+    if (e.key === '-') appendOp('-');
+    if (e.key === '*') appendOp('*');
+    if (e.key === '/') { e.preventDefault(); appendOp('/'); }
+    if (e.key === '%') appendOp('%');
+    if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); calculate(); }
+    if (e.key === 'Backspace') deleteLast();
+    if (e.key === 'Escape') clearAll();
+});
+</script>
+
+</body>
+</html>
